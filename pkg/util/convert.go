@@ -1,35 +1,9 @@
 package util
 
 import (
-	"encoding/json"
 	"github.com/pkg/errors"
 	"reflect"
 )
-
-func StringToMap(base map[string]string) map[string]any {
-	resultMap := make(map[string]any)
-	for k, v := range base {
-		var dat map[string]any
-		if err := json.Unmarshal([]byte(v), &dat); err == nil {
-			resultMap[k] = dat
-		} else {
-			resultMap[k] = v
-		}
-	}
-	return resultMap
-}
-
-func StructToMap(obj any) (d map[string]any, err error) {
-	t := reflect.TypeOf(obj)
-	v := reflect.ValueOf(obj)
-
-	d = make(map[string]any)
-	for i := 0; i < t.NumField(); i++ {
-		d[t.Field(i).Name] = v.Field(i).Interface()
-	}
-	err = nil
-	return
-}
 
 func StructCopy(DstStructPtr any, SrcStructPtr any) error {
 	a := reflect.ValueOf(SrcStructPtr)
