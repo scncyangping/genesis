@@ -1,9 +1,53 @@
 package util
 
 import (
+	"github.com/fatih/structs"
+	"github.com/jinzhu/copier"
 	"github.com/pkg/errors"
 	"reflect"
+	"time"
 )
+
+func Copy(target, source any) error {
+	err := copier.CopyWithOption(target, source, copier.Option{
+		IgnoreEmpty: false,
+		DeepCopy:    false,
+		Converters: []copier.TypeConverter{
+			{
+				SrcType: time.Time{},
+				DstType: copier.String,
+				Fn: func(src interface{}) (interface{}, error) {
+					s, ok := src.(time.Time)
+					if !ok {
+						return nil, errors.New("src type not matching")
+					}
+					return s.Format("2006-01-02 15:04:05"), nil
+				},
+			},
+		},
+	})
+
+	if err != nil {
+		return errors.Wrap(err, "Copy Struct Error")
+	}
+	return nil
+}
+
+func DeepCopy(target, source any) error {
+	return copier.CopyWithOption(target, source, copier.Option{DeepCopy: true})
+}
+
+func CopyIgnoreEmpty(target, source any) error {
+	return copier.CopyWithOption(target, source, copier.Option{IgnoreEmpty: true})
+}
+
+func DeepCopyIgnoreEmpty(target, source any) error {
+	return copier.CopyWithOption(target, source, copier.Option{DeepCopy: true, IgnoreEmpty: true})
+}
+
+func StructToMap(s any) any {
+	return structs.Map(s)
+}
 
 func StructCopy(DstStructPtr any, SrcStructPtr any) error {
 	a := reflect.ValueOf(SrcStructPtr)
