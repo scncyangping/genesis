@@ -10,11 +10,13 @@ func NowDateFormat() string {
 	return t.Format("2006-01-02")
 }
 
+// NowDateTimeFormat 当前时间字符串
 func NowDateTimeFormat() string {
 	t := time.Now()
 	return t.Format("2006-01-02 15:04:05")
 }
 
+// DateTimeFormatCustom 当前时间自定义格式化字符串
 func DateTimeFormatCustom(format string) string {
 	t := time.Now()
 	return t.Format(format)
