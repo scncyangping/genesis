@@ -121,3 +121,7 @@ func getIntranetIp() string {
 func NextId() string {
 	return strconv.FormatInt(worker.GetId(), 10)
 }
+
+func NextIdInt64() int64 {
+	return worker.GetId()
+}
