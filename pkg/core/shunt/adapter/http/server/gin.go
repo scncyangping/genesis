@@ -4,6 +4,7 @@ import (
 	"context"
 	"genesis/pkg/config/app/shunt"
 	"genesis/pkg/util/snowflake"
+	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"net"
@@ -17,15 +18,17 @@ import (
 )
 
 type HttpGin struct {
-	Conf   *shunt.ServerConfig
 	Engine *gin.Engine
-	Logger *zap.SugaredLogger
+	conf   *shunt.ServerConfig
+	logger *zap.SugaredLogger
 }
 
 func NewHttpGin(mod string, conf *shunt.ServerConfig, log *zap.SugaredLogger) *HttpGin {
 	gin.SetMode(mod)
 
 	g := gin.New()
+
+	pprof.Register(g)
 
 	switch mod {
 	case gin.ReleaseMode:
@@ -34,22 +37,72 @@ func NewHttpGin(mod string, conf *shunt.ServerConfig, log *zap.SugaredLogger) *H
 		g.Use(gin.Logger(), gin.Recovery())
 	}
 
-	return &HttpGin{Engine: g, Conf: conf, Logger: log}
+	return &HttpGin{Engine: g, conf: conf, logger: log}
 }
 
-func (e *HttpGin) Start() {
+func (e *HttpGin) NeedLeaderElection() bool {
+	return false
+}
+
+func (e *HttpGin) Start(stop <-chan struct{}) error {
+
+	errChan := make(chan error)
+
+	httpServer := e.startHttpServer(errChan)
+
+	select {
+	case <-stop:
+		e.logger.Info("stopping down API Server")
+		if httpServer != nil {
+			return httpServer.Shutdown(context.Background())
+		}
+	case err := <-errChan:
+		return err
+	}
+	return nil
+}
+
+func (e *HttpGin) startHttpServer(errChan chan error) *http.Server {
 	server := &http.Server{
-		Addr:           e.Conf.Addr,
+		Addr:           e.conf.Addr,
 		Handler:        e.Engine,
-		ReadTimeout:    time.Duration(e.Conf.ReadTimeout) * time.Second,
-		WriteTimeout:   time.Duration(e.Conf.WriteTimeout) * time.Second,
+		ReadTimeout:    time.Duration(e.conf.ReadTimeout) * time.Second,
+		WriteTimeout:   time.Duration(e.conf.WriteTimeout) * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	e.Logger.Infof("Server Start Success %s", e.Conf.Addr)
 	go func() {
 		if err := server.ListenAndServe(); err != nil {
-			e.Logger.Errorf("Server Error! %s", e.Conf.Addr)
+			if err != nil {
+				switch err {
+				case http.ErrServerClosed:
+					e.logger.Info("shutting down server")
+				default:
+					e.logger.Error(err, "could not start an HTTP Server")
+					errChan <- err
+				}
+			}
+		}
+	}()
+
+	e.logger.Infof("server start success, addr: %s", e.conf.Addr)
+
+	return server
+}
+
+func (e *HttpGin) StartBack() {
+	server := &http.Server{
+		Addr:           e.conf.Addr,
+		Handler:        e.Engine,
+		ReadTimeout:    time.Duration(e.conf.ReadTimeout) * time.Second,
+		WriteTimeout:   time.Duration(e.conf.WriteTimeout) * time.Second,
+		MaxHeaderBytes: 1 << 20,
+	}
+
+	e.logger.Infof("Server Start Success %s", e.conf.Addr)
+	go func() {
+		if err := server.ListenAndServe(); err != nil {
+			e.logger.Errorf("Server Error! %s", e.conf.Addr)
 		}
 	}()
 
@@ -59,20 +112,20 @@ func (e *HttpGin) Start() {
 
 	<-quit
 
-	e.Logger.Errorf("Shutdown Server ...%s", e.Conf.Addr)
+	e.logger.Errorf("Shutdown Server ...%s", e.conf.Addr)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		e.Logger.Errorf("Server Shutdown: %v %v \n", e.Conf.Addr, err)
+		e.logger.Errorf("Server Shutdown: %v %v \n", e.conf.Addr, err)
 	}
 	select {
 	case <-ctx.Done():
-		e.Logger.Errorf("Timeout of 10 seconds. %s", e.Conf.Addr)
+		e.logger.Errorf("Timeout of 10 seconds. %s", e.conf.Addr)
 	}
 
-	e.Logger.Errorf("Server exiting, %s", e.Conf.Addr)
+	e.logger.Errorf("Server exiting, %s", e.conf.Addr)
 }
 
 func LogMiddleware(log *zap.SugaredLogger) gin.HandlerFunc {
