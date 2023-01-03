@@ -3,6 +3,7 @@ package cmd
 import (
 	"genesis/pkg/config"
 	"genesis/pkg/config/app/shunt"
+	"genesis/pkg/types/constants"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"os"
@@ -34,7 +35,7 @@ func newRootCmd() *cobra.Command {
 	cmd.PersistentFlags().StringVarP(&args.configPath, "config-file", "c", "", "configuration file")
 
 	// sub-commands
-	cmd.AddCommand(newRunCmd())
+	cmd.AddCommand(newRunCmd(constants.DefaultRunCmdOpts))
 
 	return cmd
 }
