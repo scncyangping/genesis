@@ -39,7 +39,7 @@ func newRunCmd(opts constants.RunCmdOpts) *cobra.Command {
 				return err
 			}
 
-			runLog.Info("Stop signal received. Waiting 3 seconds for components to stop gracefully...")
+			runLog.Infof("Stop signal received. Waiting %d seconds for components to stop gracefully...", gracefullyShutdownDuration)
 			select {
 			case <-ctx.Done():
 			case <-time.After(gracefullyShutdownDuration):
