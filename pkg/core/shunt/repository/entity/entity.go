@@ -1,10 +1,13 @@
 package entity
 
 import (
-	"gorm.io/plugin/soft_delete"
-	"genesis/pkg/config/app/shunt"
 	"genesis/pkg/core/shunt"
+	"gorm.io/plugin/soft_delete"
 	"time"
+)
+
+const (
+	DBTableUser = "user" // user table
 )
 
 type En struct {
@@ -25,5 +28,5 @@ type UserEn struct {
 }
 
 func (uen UserEn) TableName() string {
-	return shunt.DBTableUser
+	return DBTableUser
 }
