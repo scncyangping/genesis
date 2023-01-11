@@ -42,7 +42,7 @@ var DefaultJwtConfig = func() *JwtConfig {
 	}
 }
 
-type Config struct {
+type ShuntConfig struct {
 	// 服务配置
 	Server *ServerConfig
 	// 日志配置
@@ -57,16 +57,16 @@ type Config struct {
 	Jwt *JwtConfig
 }
 
-var _ config.Config = (*Config)(nil)
+var _ config.Config = (*ShuntConfig)(nil)
 
-func (c *Config) Sanitize() {
+func (c *ShuntConfig) Sanitize() {
 	c.Log.Sanitize()
 	c.Redis.Sanitize()
 	c.Mongo.Sanitize()
 	c.Mysql.Sanitize()
 }
 
-func (c *Config) Validate() error {
+func (c *ShuntConfig) Validate() error {
 	err := c.Log.Validate()
 	if err != nil {
 		return errors.Wrap(err, "log init error")
@@ -87,7 +87,7 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-func (c *Config) Init() error {
+func (c *ShuntConfig) Init() error {
 	if conn, err := _mongo.NewMongoConn(c.Mongo); err != nil {
 		return err
 	} else {
@@ -109,8 +109,8 @@ func (c *Config) Init() error {
 	return nil
 }
 
-var DefaultConfig = func() *Config {
-	return &Config{
+var DefaultConfig = func() *ShuntConfig {
+	return &ShuntConfig{
 		Server: DefaultServerConfig(),
 		Log:    log.DefaultLogConfig(),
 		Redis:  &redis.RedisConfig{},
