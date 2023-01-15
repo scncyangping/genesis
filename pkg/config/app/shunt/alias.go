@@ -7,10 +7,34 @@ import (
 )
 
 type RunTime struct {
-	logg        *zap.SugaredLogger
+	logger      *zap.SugaredLogger
 	mongoConn   *mongo.Client
 	mysqlGormDb *gorm.DB
-	shuntConfig *Config
+	shuntConfig *ShuntConfig
+}
+
+func NewRunTime() *RunTime {
+	return &RunTime{}
+}
+
+func (r *RunTime) buildLogger(logger *zap.SugaredLogger) *RunTime {
+	r.logger = logger
+	return r
+}
+
+func (r *RunTime) buildMongoConn(mc *mongo.Client) *RunTime {
+	r.mongoConn = mc
+	return r
+}
+
+func (r *RunTime) buildGormDb(gd *gorm.DB) *RunTime {
+	r.mysqlGormDb = gd
+	return r
+}
+
+func (r *RunTime) buildConfig(config *ShuntConfig) *RunTime {
+	r.shuntConfig = config
+	return r
 }
 
 var (
@@ -19,33 +43,28 @@ var (
 	}
 )
 
-const (
-	DefaultDbName = "genesis-shunt" // default db name
-	DBTableUser   = "user"          // user table
-)
-
 func setLog(l *zap.SugaredLogger) {
-	runTimeContext.logg = l
-}
-
-func Log() *zap.SugaredLogger {
-	return runTimeContext.logg
-}
-
-func ShuntConfig() *Config {
-	return runTimeContext.shuntConfig
+	runTimeContext.logger = l
 }
 
 func setMongoConn(m *mongo.Client) {
 	runTimeContext.mongoConn = m
 }
 
+func setGormDb(d *gorm.DB) {
+	runTimeContext.mysqlGormDb = d
+}
+
 func MongoConn() *mongo.Client {
 	return runTimeContext.mongoConn
 }
 
-func setGormDb(d *gorm.DB) {
-	runTimeContext.mysqlGormDb = d
+func Config() *ShuntConfig {
+	return runTimeContext.shuntConfig
+}
+
+func Log() *zap.SugaredLogger {
+	return runTimeContext.logger
 }
 
 func GormDB() *gorm.DB {
