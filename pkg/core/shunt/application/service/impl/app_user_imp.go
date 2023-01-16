@@ -2,7 +2,6 @@ package impl
 
 import (
 	"errors"
-	"go.mongodb.org/mongo-driver/mongo"
 	"genesis/pkg/config/app/shunt"
 	"genesis/pkg/core/shunt/application/cqe/cmd"
 	"genesis/pkg/core/shunt/application/dto"
@@ -11,6 +10,8 @@ import (
 	"genesis/pkg/util"
 	"genesis/pkg/util/jwt"
 	"genesis/pkg/util/snowflake"
+
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type AuthSrvImp struct {
@@ -37,9 +38,9 @@ func (a *AuthSrvImp) Login(re *cmd.LoginCmd) (dto.UserDto, error) {
 
 			userDto.Token, err = jwt.GenerateToken(
 				vo.Name,
-				shunt.ShuntConfig().Jwt.Issuer,
-				shunt.ShuntConfig().Jwt.Secret,
-				shunt.ShuntConfig().Jwt.ExpireTime)
+				shunt.Config().Jwt.Issuer,
+				shunt.Config().Jwt.Secret,
+				shunt.Config().Jwt.ExpireTime)
 
 			return userDto, err
 		} else {

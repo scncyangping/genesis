@@ -28,9 +28,9 @@ func (h *Handler) TokenAuthMiddleware() gin.HandlerFunc {
 			token   string
 			errFlag ResultCode
 		)
-		token = c.Request.FormValue(shunt.ShuntConfig().Jwt.AuthKey)
+		token = c.Request.FormValue(shunt.Config().Jwt.AuthKey)
 		if token == "" {
-			token = c.GetHeader(shunt.ShuntConfig().Jwt.AuthKey)
+			token = c.GetHeader(shunt.Config().Jwt.AuthKey)
 		}
 		if token == "" {
 			c.Abort()
@@ -38,7 +38,7 @@ func (h *Handler) TokenAuthMiddleware() gin.HandlerFunc {
 			return
 
 		}
-		if claims, err := jwt.ParseToken(token, shunt.ShuntConfig().Jwt.Secret); err != nil {
+		if claims, err := jwt.ParseToken(token, shunt.Config().Jwt.Secret); err != nil {
 			fmt.Println(err)
 			errFlag = RequestCheckTokenError
 		} else if time.Now().Unix() > claims.Base.ExpiresAt {

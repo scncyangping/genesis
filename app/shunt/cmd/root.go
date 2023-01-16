@@ -18,7 +18,7 @@ func newRootCmd() *cobra.Command {
 		Short: "genesis Shunt Aggregate Url.",
 		Long:  `genesis Shunt Aggregate Url.`,
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
-			err := config.Load(args.configPath, shunt.ShuntConfig())
+			err := config.Load(args.configPath, shunt.Config())
 
 			if err != nil {
 				return errors.Wrapf(err, "could not load the configuration")

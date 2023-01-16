@@ -29,7 +29,7 @@ func newRunCmd(opts constants.RunCmdOpts) *cobra.Command {
 			gracefulCtx, ctx := opts.SetupSignalHandler(log)
 
 			// step1. add http server
-			httpServer := server.NewHttpGin(mod, shunt.ShuntConfig().Server, log)
+			httpServer := server.NewHttpGin(mod, shunt.Config().Server, log)
 			routers.InitRoute(httpServer.Engine, NewHandler())
 
 			rt.Add(component.NewResilientComponent(log, httpServer))
