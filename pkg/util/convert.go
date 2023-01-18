@@ -1,11 +1,13 @@
 package util
 
 import (
+	"reflect"
+	"strings"
+	"time"
+
 	"github.com/fatih/structs"
 	"github.com/jinzhu/copier"
 	"github.com/pkg/errors"
-	"reflect"
-	"time"
 )
 
 func Copy(target, source any) error {
@@ -103,4 +105,23 @@ func deepFields(baseType reflect.Type) []reflect.StructField {
 		}
 	}
 	return fields
+}
+
+// name: convert string
+// big: whether the first letter is capitalized
+func Camelize(name string, big bool) string {
+	temp := strings.Split(name, "_")
+	var s string
+	for i, v := range temp {
+		vv := []rune(v)
+		if len(vv) > 0 {
+			if !(!big && i == 0) {
+				if vv[0] >= 'a' && vv[0] <= 'z' { //首字母大写
+					vv[0] -= 32
+				}
+			}
+			s += string(vv)
+		}
+	}
+	return s
 }
