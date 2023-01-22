@@ -17,6 +17,13 @@ type FileZip struct {
 	files    []*FileInfo
 }
 
+func NewZip(path string, files []*FileInfo) *FileZip {
+	return &FileZip{
+		savePath: path,
+		files:    files,
+	}
+}
+
 func NewFileZip(path string) *FileZip {
 	return &FileZip{
 		savePath: path,
