@@ -2,9 +2,14 @@ package util
 
 import (
 	"archive/zip"
+	"io"
 	"log"
 	"os"
+	"strings"
 )
+
+// MatchOptions 传入文件名称 返回是否需要match
+type FileMatchOptions func(string) bool
 
 type FileInfo struct {
 	path string // file path
@@ -61,4 +66,83 @@ func (c *FileZip) Zip() error {
 	}
 	// 清理
 	return zipWriter.Close()
+}
+
+// un zip file struct
+type FileUnZip struct {
+	path         string
+	files        []*FileInfo
+	matchOptions []FileMatchOptions
+}
+
+func NewFileUnzip(path string) *FileUnZip {
+	return &FileUnZip{
+		path:         path,
+		files:        make([]*FileInfo, 0),
+		matchOptions: make([]FileMatchOptions, 0),
+	}
+}
+
+func (t *FileUnZip) UnZip(path string) error {
+	if zipReader, err := zip.OpenReader(path); err != nil {
+		return err
+	} else {
+		defer zipReader.Close()
+
+		// m := make(map[string]string)
+		for _, file := range zipReader.Reader.File {
+			t.readFile(file)
+		}
+	}
+
+	return nil
+}
+
+func (t *FileUnZip) readFile(file *zip.File) error {
+	// 打包文件中的文件就像普通的一个文件对象一样
+	zippedFile, err := file.Open()
+	if err != nil {
+		return err
+	}
+	defer zippedFile.Close()
+
+	if !file.FileInfo().IsDir() {
+		flag := false
+		for _, n := range t.matchOptions {
+			if n(file.Name) {
+				flag = true
+				break
+			}
+		}
+		if flag {
+			content, err := io.ReadAll(zippedFile)
+			if err != nil {
+				log.Println(err)
+			}
+			t.files = append(t.files, &FileInfo{
+				path: file.Name,
+				data: content,
+			})
+		}
+	}
+
+	return nil
+}
+
+// file match options: suffix matches
+type MatchSuffix struct {
+	suffix []string
+}
+
+func NewMatchSuffix(s []string) *MatchSuffix {
+	return &MatchSuffix{suffix: s}
+}
+
+func (m *MatchSuffix) SuffixMatch(url string) bool {
+	for _, n := range m.suffix {
+		if strings.HasSuffix(url, n) {
+			return true
+		}
+	}
+	return false
 }
