@@ -6,47 +6,60 @@ import (
 	"log"
 	"os"
 	"strings"
+
+	"github.com/samber/lo"
 )
 
 // MatchOptions 传入文件名称 返回是否需要match
-type FileMatchOptions func(string) bool
+// type FileMatchOptions func(string) bool
+type FileMatchEnum string
+
+const (
+	FileMatchPath FileMatchEnum = "PATH"
+	FileMatchBody FileMatchEnum = "BODY"
+)
+
+type FileMatch struct {
+	MType FileMatchEnum
+	DoFn  func(string) bool
+}
 
 type FileInfo struct {
-	path string // file path
-	data []byte // file data
+	Path string // file path
+	Data []byte // file data
 }
 
 // zip file struct
 type FileZip struct {
-	savePath string
-	files    []*FileInfo
+	SavePath string
+	Files    []*FileInfo
 }
 
 func NewZip(path string, files []*FileInfo) *FileZip {
 	return &FileZip{
-		savePath: path,
-		files:    files,
+		SavePath: path,
+		Files:    files,
 	}
 }
 
 func NewFileZip(path string) *FileZip {
 	return &FileZip{
-		savePath: path,
-		files:    make([]*FileInfo, 0),
+		SavePath: path,
+		Files:    make([]*FileInfo, 0),
 	}
 }
 
 func (c *FileZip) Append(path string, data []byte) *FileZip {
-	c.files = append(c.files, &FileInfo{
-		path: path,
-		data: data,
+	c.Files = append(c.Files, &FileInfo{
+		Path: path,
+		Data: data,
 	})
 	return c
 }
 
 func (c *FileZip) Zip() error {
 	// 创建一个打包文件
-	outFile, err := os.Create(c.savePath)
+	outFile, err := os.Create(c.SavePath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -54,11 +67,11 @@ func (c *FileZip) Zip() error {
 	// 创建zip writer
 	zipWriter := zip.NewWriter(outFile)
 	// 往打包文件中写文件
-	for _, file := range c.files {
-		if fileWriter, err := zipWriter.Create(file.path); err != nil {
+	for _, file := range c.Files {
+		if fileWriter, err := zipWriter.Create(file.Path); err != nil {
 			return err
 		} else {
-			if _, err := fileWriter.Write(file.data); err != nil {
+			if _, err := fileWriter.Write(file.Data); err != nil {
 				return err
 			}
 
@@ -70,22 +83,27 @@ func (c *FileZip) Zip() error {
 
 // un zip file struct
 type FileUnZip struct {
-	path         string
 	files        []*FileInfo
-	matchOptions []FileMatchOptions
+	matchOptions []FileMatch
 }
 
-func NewFileUnzip(path string) *FileUnZip {
+func NewFileUnzip() *FileUnZip {
 	return &FileUnZip{
-		path:         path,
 		files:        make([]*FileInfo, 0),
-		matchOptions: make([]FileMatchOptions, 0),
+		matchOptions: make([]FileMatch, 0),
 	}
 }
 
-func (t *FileUnZip) UnZip(path string) error {
+func (t *FileUnZip) AddOption(m FileMatch) {
+	if t.matchOptions == nil {
+		t.matchOptions = make([]FileMatch, 0)
+	}
+	t.matchOptions = append(t.matchOptions, m)
+}
+
+func (t *FileUnZip) UnZip(path string) ([]*FileInfo, error) {
 	if zipReader, err := zip.OpenReader(path); err != nil {
-		return err
+		return nil, err
 	} else {
 		defer zipReader.Close()
 
@@ -95,7 +113,7 @@ func (t *FileUnZip) UnZip(path string) error {
 		}
 	}
 
-	return nil
+	return t.files, nil
 }
 
 func (t *FileUnZip) readFile(file *zip.File) error {
@@ -108,21 +126,29 @@ func (t *FileUnZip) readFile(file *zip.File) error {
 
 	if !file.FileInfo().IsDir() {
 		flag := false
-		for _, n := range t.matchOptions {
-			if n(file.Name) {
-				flag = true
-				break
+
+		em := lo.GroupBy(t.matchOptions, func(item FileMatch) FileMatchEnum {
+			return item.MType
+		})
+
+		if fn, ok := em[FileMatchPath]; ok {
+			for _, v := range fn {
+				rs := v.DoFn(file.Name)
+				if rs {
+					flag = true
+					break
+				}
 			}
-		}
-		if flag {
-			content, err := io.ReadAll(zippedFile)
-			if err != nil {
-				log.Println(err)
+			if flag {
+				content, err := io.ReadAll(zippedFile)
+				if err != nil {
+					log.Println(err)
+				}
+				t.files = append(t.files, &FileInfo{
+					Path: file.Name,
+					Data: content,
+				})
 			}
-			t.files = append(t.files, &FileInfo{
-				path: file.Name,
-				data: content,
-			})
 		}
 	}
 
