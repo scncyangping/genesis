@@ -38,22 +38,8 @@ func (r *RunTime) buildConfig(config *ShuntConfig) *RunTime {
 }
 
 var (
-	runTimeContext = &RunTime{
-		shuntConfig: DefaultConfig(),
-	}
+	runTimeContext = NewRunTime().buildConfig(DefaultConfig())
 )
-
-func setLog(l *zap.SugaredLogger) {
-	runTimeContext.logger = l
-}
-
-func setMongoConn(m *mongo.Client) {
-	runTimeContext.mongoConn = m
-}
-
-func setGormDb(d *gorm.DB) {
-	runTimeContext.mysqlGormDb = d
-}
 
 func MongoConn() *mongo.Client {
 	return runTimeContext.mongoConn

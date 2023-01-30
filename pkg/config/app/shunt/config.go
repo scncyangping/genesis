@@ -3,12 +3,10 @@ package shunt
 import (
 	"genesis/pkg/config"
 	"genesis/pkg/config/common/log"
-	"genesis/pkg/config/common/mongo"
 	"genesis/pkg/config/common/mysql"
-	"genesis/pkg/config/common/redis"
 	logger "genesis/pkg/log"
-	_mongo "genesis/pkg/plugin/mongo"
 	_mysql "genesis/pkg/plugin/mysql"
+
 	"github.com/pkg/errors"
 )
 
@@ -43,14 +41,15 @@ var DefaultJwtConfig = func() *JwtConfig {
 }
 
 type ShuntConfig struct {
+	// redis配置
+	// Redis *redis.RedisConfig
+	// // mongodb配置
+	// Mongo *mongo.MongoConfig
+
 	// 服务配置
 	Server *ServerConfig
 	// 日志配置
 	Log *log.LogConfig
-	// redis配置
-	Redis *redis.RedisConfig
-	// mongodb配置
-	Mongo *mongo.MongoConfig
 	// mysql配置
 	Mysql *mysql.MysqlConfig
 	// jwt配置
@@ -60,25 +59,27 @@ type ShuntConfig struct {
 var _ config.Config = (*ShuntConfig)(nil)
 
 func (c *ShuntConfig) Sanitize() {
+	// c.Redis.Sanitize()
+	// c.Mongo.Sanitize()
 	c.Log.Sanitize()
-	c.Redis.Sanitize()
-	c.Mongo.Sanitize()
 	c.Mysql.Sanitize()
 }
 
 func (c *ShuntConfig) Validate() error {
+	// err := c.Redis.Validate()
+	// if err != nil {
+	// 	return errors.Wrap(err, "redis init error")
+	// }
+	// err = c.Mongo.Validate()
+	// if err != nil {
+	// 	return errors.Wrap(err, "mongo init error")
+	// }
+
 	err := c.Log.Validate()
 	if err != nil {
 		return errors.Wrap(err, "log init error")
 	}
-	err = c.Redis.Validate()
-	if err != nil {
-		return errors.Wrap(err, "redis init error")
-	}
-	err = c.Mongo.Validate()
-	if err != nil {
-		return errors.Wrap(err, "mongo init error")
-	}
+
 	err = c.Mysql.Validate()
 	if err != nil {
 		return errors.Wrap(err, "mysql init error")
@@ -88,33 +89,35 @@ func (c *ShuntConfig) Validate() error {
 }
 
 func (c *ShuntConfig) Init() error {
-	if conn, err := _mongo.NewMongoConn(c.Mongo); err != nil {
-		return err
-	} else {
-		setMongoConn(conn)
-	}
+	// if conn, err := _mongo.NewMongoConn(c.Mongo); err != nil {
+	// 	return err
+	// } else {
+	// 	//setMongoConn(conn)
+	// 	runTimeContext.buildMongoConn(conn)
+	// }
 
 	if newLogger, err := logger.NewLogger(c.Log); err != nil {
 		return err
 	} else {
-		setLog(newLogger)
+		//setLog(newLogger)
+		runTimeContext.buildLogger(newLogger)
 	}
 
-	conn, err := _mysql.NewMysqlConn(c.Mysql)
-	if err != nil {
+	if conn, err := _mysql.NewMysqlConn(c.Mysql); err != nil {
 		return err
 	} else {
-		setGormDb(conn)
+		runTimeContext.buildGormDb(conn)
 	}
+
 	return nil
 }
 
 var DefaultConfig = func() *ShuntConfig {
 	return &ShuntConfig{
+		// Redis:  &redis.RedisConfig{},
+		// Mongo:  &mongo.MongoConfig{},
 		Server: DefaultServerConfig(),
 		Log:    log.DefaultLogConfig(),
-		Redis:  &redis.RedisConfig{},
-		Mongo:  &mongo.MongoConfig{},
 		Mysql:  &mysql.MysqlConfig{},
 		Jwt:    DefaultJwtConfig(),
 	}
