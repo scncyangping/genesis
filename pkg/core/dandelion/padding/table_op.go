@@ -57,6 +57,7 @@ var mapMixture = map[string]string{
 	"timestamp": "int64",
 	"time":      "int64",
 	"text":      "string",
+	"json":      "string",
 }
 
 type TableOp struct {
