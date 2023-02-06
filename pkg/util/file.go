@@ -124,7 +124,7 @@ func (t *FileUnZip) readFile(file *zip.File) error {
 	}
 	defer zippedFile.Close()
 
-	if !file.FileInfo().IsDir() {
+	if !file.FileInfo().IsDir() && !strings.Contains(file.Name, "/.") {
 		flag := false
 
 		em := lo.GroupBy(t.matchOptions, func(item FileMatch) FileMatchEnum {
@@ -160,8 +160,15 @@ type MatchSuffix struct {
 	suffix []string
 }
 
-func NewMatchSuffix(s []string) *MatchSuffix {
-	return &MatchSuffix{suffix: s}
+var defaultMatchSuffix = []string{"go", "mod", "tmpl", "xml"}
+
+func NewMatchSuffix() *MatchSuffix {
+	return &MatchSuffix{suffix: defaultMatchSuffix}
+}
+
+func (m *MatchSuffix) BuildMatchSuffix(s []string) *MatchSuffix {
+	m.suffix = s
+	return m
 }
 
 func (m *MatchSuffix) SuffixMatch(url string) bool {

@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/fatih/structs"
 	"github.com/jinzhu/copier"
@@ -124,4 +125,21 @@ func Camelize(name string, big bool) string {
 		}
 	}
 	return s
+}
+
+// 驼峰式写法转为下划线写法
+func UnCamelize(name string) string {
+	buffer := strings.Builder{}
+	
+	for i, r := range name {
+		if unicode.IsUpper(r) {
+			if i != 0 {
+				buffer.WriteRune('_')
+			}
+			buffer.WriteRune(unicode.ToLower(r))
+		} else {
+			buffer.WriteRune(r)
+		}
+	}
+	return buffer.String()
 }
