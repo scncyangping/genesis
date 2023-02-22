@@ -179,3 +179,16 @@ func (m *MatchSuffix) SuffixMatch(url string) bool {
 	}
 	return false
 }
+
+
+
+func CreateDirectory(dir string) (err error) {
+	if _, err = os.Stat(dir); err != nil {
+		if os.IsNotExist(err) {
+			if err = os.MkdirAll(dir, 0755); err != nil {
+				return
+			}
+		}
+	}
+	return
+}
