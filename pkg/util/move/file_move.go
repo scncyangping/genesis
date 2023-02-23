@@ -16,6 +16,7 @@ var (
 	ZNUM        = 0
 	SizeNum     = 0
 	MaxGroupNum = 500
+	MaxFileSize = int64(1024 * 800)
 )
 
 func main() {
@@ -58,7 +59,7 @@ func ReadFile(dirPath string) error {
 		} else {
 			// file.Size()
 			size := file.Size()
-			if size < 81920 {
+			if size < MaxFileSize {
 				continue
 			}
 			SizeNum++
