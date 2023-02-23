@@ -10,10 +10,13 @@ import (
 	"strings"
 )
 
-var Source = ""
-var Target = ""
-var ZNUM = 0
-var SizeNum = 0
+var (
+	Source      = ""
+	Target      = ""
+	ZNUM        = 0
+	SizeNum     = 0
+	MaxGroupNum = 500
+)
 
 func main() {
 	// 获取文件目录
@@ -42,14 +45,16 @@ func main() {
 	}
 }
 
-func ReadFile(dirPath string) {
+func ReadFile(dirPath string) error {
 	fs, err := ioutil.ReadDir(dirPath)
 	if err != nil {
-		fmt.Println(fmt.Sprintf("error : %v", err))
+		return err
 	}
 	for _, file := range fs {
 		if file.IsDir() {
-			ReadFile(filepath.Join(dirPath, file.Name()))
+			if er := ReadFile(filepath.Join(dirPath, file.Name())); err != nil {
+				return er
+			}
 		} else {
 			// file.Size()
 			size := file.Size()
@@ -58,7 +63,7 @@ func ReadFile(dirPath string) {
 			}
 			SizeNum++
 
-			if SizeNum == 500 {
+			if SizeNum == MaxGroupNum {
 				ZNUM++
 				SizeNum = 0
 			}
@@ -79,20 +84,22 @@ func ReadFile(dirPath string) {
 			}
 		}
 	}
+	return nil
 }
 
-func ToFile(tar string) {
+func ToFile(tar string) error {
 	fs, err := ioutil.ReadDir(tar)
 	if err != nil {
-		fmt.Println(fmt.Sprintf("error : %v", err))
+		return err
 	}
 	for _, file := range fs {
 		if file.IsDir() {
-			ToFile(filepath.Join(tar, file.Name()))
+			if err := ToFile(filepath.Join(tar, file.Name())); err != nil {
+				return err
+			}
 		} else {
 			fileExt := filepath.Ext(file.Name())
 
-			//endStr := strings.Replace(filepath.Join(tar, file.Name()), Target, "", -1)
 			endStr := file.Name()
 
 			// 第一个目录为分类目录,去要去掉
@@ -107,6 +114,6 @@ func ToFile(tar string) {
 				fmt.Println(err)
 			}
 		}
-
 	}
+	return nil
 }
