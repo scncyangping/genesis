@@ -7,22 +7,22 @@ type MapBody struct {
 
 type Model struct {
 	ModuleName string
-	OldName    string    // 数据库表名 下划线
-	DName      string    // 大驼峰
-	XName      string    // 小驼峰
+	OldName    string
+	DName      string
+	XName      string 
 	Columns    []*Column `json:"columns,omitempty"`
 }
 
 type Column struct {
 	DBCloumnDetails `structs:",flatten"`
-	ColumnDName     string // 大驼峰
-	ColumnXName     string // 小驼峰
+	ColumnDName     string 
+	ColumnXName     string
 }
 
 type TableInfo struct {
 	DBTableDetails `structs:",flatten"`
-	TableDName     string // 表名大驼峰
-	TableXName     string // 表名小驼峰
+	TableDName     string 
+	TableXName     string 
 }
 
 type DBCloumnDetails struct {
