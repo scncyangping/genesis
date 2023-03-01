@@ -152,8 +152,12 @@ func (m *Manager) mixture(tm map[string]string, data map[string]any) (*util.File
 					}
 
 					split, fileName := filepath.Split(k)
+
+					for k, v := range dandelion.SuffixReplaceMap {
+						fileName = strings.ReplaceAll(fileName, k, v)
+					}
 					// replace file suffix
-					fileName = strings.ReplaceAll(fileName, "tmpl", "go")
+					// fileName = strings.ReplaceAll(fileName, "tmpl", "go")
 					// replace moudle name
 					OldName := model.(map[string]any)["OldName"].(string)
 					fileName = strings.ReplaceAll(fileName, "xxx", OldName)
