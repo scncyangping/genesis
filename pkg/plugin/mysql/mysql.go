@@ -106,9 +106,7 @@ func buildStruct(en any, rz bool, tx *gorm.DB) (*gorm.DB, error) {
 	v := reflect.ValueOf(en)
 	for k := 0; k < t.NumField(); k++ {
 		cv := v.Field(k).Interface()
-
 		iz := v.Field(k).IsZero()
-
 		// 不是零值或者是零值但是不移除零值
 		if !(!iz || (iz && !rz)) {
 			continue
@@ -118,7 +116,6 @@ func buildStruct(en any, rz bool, tx *gorm.DB) (*gorm.DB, error) {
 			buildStruct(cv, true, tx)
 			continue
 		}
-
 		// use tag
 		var cn string
 		for _, v := range strings.Split(t.Field(k).Tag.Get("gorm"), ";") {
