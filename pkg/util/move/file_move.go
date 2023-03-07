@@ -19,6 +19,21 @@ var (
 	MaxFileSize = int64(1024 * 800)
 )
 
+func Start(old_pah, new_pah string, opType int) {
+	if !strings.HasSuffix(Source, string(filepath.Separator)) {
+		Source += string(filepath.Separator)
+	}
+	if !strings.HasSuffix(Target, string(filepath.Separator)) {
+		Target += string(filepath.Separator)
+	}
+
+	if opType == 1 {
+		ReadFile(Source)
+	} else if opType == 2 {
+		ToFile(Target)
+	}
+}
+
 func main() {
 	// 获取文件目录
 	args := os.Args
