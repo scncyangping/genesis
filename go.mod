@@ -61,6 +61,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/pkg/errors v0.9.1
+	github.com/robfig/cron v1.2.0
 	github.com/samber/lo v1.37.0
 	github.com/sony/sonyflake v1.1.0
 	golang.org/x/image v0.5.0
