@@ -13,6 +13,7 @@ require (
 
 require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
+	github.com/elastic/elastic-transport-go/v8 v8.0.0-20211216131617-bbee439d559c // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
@@ -52,6 +53,7 @@ require (
 )
 
 require (
+	github.com/elastic/go-elasticsearch/v8 v8.6.0
 	github.com/fatih/structs v1.1.0
 	github.com/gin-contrib/pprof v1.4.0
 	github.com/go-redis/redis v6.15.9+incompatible
