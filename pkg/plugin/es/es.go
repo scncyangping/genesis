@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"genesis/pkg/config/common/es"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -44,6 +45,38 @@ func NewESClient(config *es.Config) (*elasticsearch.Client, error) {
 
 type ES struct {
 	Client *elasticsearch.Client
+}
+
+type WithEsSearch struct {
+	index string
+	query map[string]any
+	from  int
+	size  int
+	sort  string
+}
+
+func NewWithEsSearch(index string, query map[string]any) *WithEsSearch {
+	return &WithEsSearch{
+		index: index,
+		query: query,
+		from:  0,
+		size:  10,
+	}
+}
+
+func (w *WithEsSearch) WithEsFrom(from int) *WithEsSearch {
+	w.from = from
+	return w
+}
+
+func (w *WithEsSearch) WithEsSize(size int) *WithEsSearch {
+	w.size = size
+	return w
+}
+
+func (w *WithEsSearch) WithEsSort(sort string) *WithEsSearch {
+	w.sort = sort
+	return w
 }
 
 func (e *ES) Index(index string, doc any) (string, error) {
@@ -108,50 +141,39 @@ func (e *ES) IndexESApi(index, idx string, doc map[string]any) {
 	log.Println(res)
 }
 
-func (e *ES) Search(index string, query map[string]any) (string, error) {
+func (e *ES) Search(w *WithEsSearch) ([]byte, error) {
 	res, err := e.Client.Info()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	//fmt.Println(res.String())
-	// search - highlight
 	var buf bytes.Buffer
-	//query := map[string]interface{}{
-	//	"query": map[string]interface{}{
-	//		"match": map[string]interface{}{
-	//			"title": title,
-	//		},
-	//	},
-	//	"highlight": map[string]interface{}{
-	//		"pre_tags":  []string{"<font color='red'>"},
-	//		"post_tags": []string{"</font>"},
-	//		"fields": map[string]interface{}{
-	//			"title": map[string]interface{}{},
-	//		},
-	//	},
-	//}
-	if err := json.NewEncoder(&buf).Encode(query); err != nil {
-		return "", err
+	if err := json.NewEncoder(&buf).Encode(w.query); err != nil {
+		return nil, err
 	}
-	// Perform the search request.
-	res, err = e.Client.Search(
+
+	options := []func(request *esapi.SearchRequest){
 		e.Client.Search.WithContext(context.Background()),
-		e.Client.Search.WithIndex(index),
+		e.Client.Search.WithIndex(w.index),
 		e.Client.Search.WithBody(&buf),
-		e.Client.Search.WithTrackTotalHits(true),
-		e.Client.Search.WithFrom(0),
-		e.Client.Search.WithSize(10),
-		e.Client.Search.WithSort("time:desc"),
-		e.Client.Search.WithPretty(),
-	)
+		e.Client.Search.WithFrom(w.from),
+		e.Client.Search.WithSize(w.size),
+		//e.Client.Search.WithSort(w.sort), //time:desc
+		//e.Client.Search.WithTrackTotalHits(true),
+		//e.Client.Search.WithPretty(),
+	}
+
+	if w.sort != "" {
+		options = append(options, e.Client.Search.WithSort(w.sort))
+	}
+
+	// Perform the search request.
+	res, err = e.Client.Search(options...)
 
 	defer res.Body.Close()
-
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-
-	return res.String(), err
+	return ioutil.ReadAll(res.Body)
 }
 
 // Delete 删除 index 根据 索引名 id
