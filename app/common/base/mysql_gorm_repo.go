@@ -2,25 +2,54 @@
 // @Create: 2023/10/23
 // @Description: Gorm基础操作
 
-package mysqlRepo
+package base
 
 import (
 	"fmt"
-	"genesis/app/common/base"
-	"genesis/app/shunt/adapter/cqe/query"
 	"genesis/pkg/plugin/mysql"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
-type UniversalGormRepo[T base.EnI] struct {
+type UniversalRepositoryI[T EnI] interface {
+	// GetById 根据主键查询数据
+	GetById(string) (*T, error)
+	// FindBy 根据条件查询数据
+	// bool: map中是否去除空元素
+	FindBy(map[string]any, bool) ([]*T, error)
+	// QueryByPage
+	// any: struct or map
+	// bool: map中是否去除空元素
+	QueryByPage(any, int, int, string, string, bool) ([]*T, int64, error)
+	// SaveBatch 批量保存
+	// int: 每一批次数量
+	SaveBatch([]*T, int) error
+	// Save 保存/批量保存
+	Save(*T) error
+	// Update 实体更新
+	Update(*T) error
+	// UpdateByMap 根据主键ID批量更新
+	UpdateByMap(map[string]any, []string) (error, int64)
+	// DeleteById 根据主键删除数据
+	/**/
+	DeleteById(string) (error, bool)
+	// DeleteBy 根据条件删除数据
+	// bool: map中是否去除空元素
+	DeleteBy(map[string]any, bool) (error, int64)
+}
+
+type UniversalGormRepo[T EnI] struct {
 	gm    *gorm.DB
 	model T
 }
 
-func NewUniversalGormRepo[T base.EnI](model T, db *gorm.DB) *UniversalGormRepo[T] {
+func NewUniversalGormRepo[T EnI](model T, db *gorm.DB) *UniversalGormRepo[T] {
 	return &UniversalGormRepo[T]{model: model, gm: db}
+}
+
+func (u *UniversalGormRepo[T]) Gm() *gorm.DB {
+	return u.gm
 }
 
 func (u *UniversalGormRepo[T]) Save(data *T) error {
@@ -81,7 +110,7 @@ func (u *UniversalGormRepo[T]) SaveBatch(data []*T, batchSize int) error {
 	return nil
 }
 
-func (u *UniversalGormRepo[T]) QueryByPage(data any, pq *query.PageQBase, removeZero bool) ([]*T, int64, error) {
+func (u *UniversalGormRepo[T]) QueryByPage(data any, skip, limit int, sort, sortBy string, removeZero bool) ([]*T, int64, error) {
 	var (
 		ens   []*T
 		count int64
@@ -91,11 +120,11 @@ func (u *UniversalGormRepo[T]) QueryByPage(data any, pq *query.PageQBase, remove
 		return ens, count, errors.New(fmt.Sprintf("[%s]构建查询条件异常:%v", u.model.TableName(), err))
 	} else {
 		if err := gormDb.Count(&count).
-			Limit(pq.Limit).
-			Offset(pq.Skip).
+			Limit(limit).
+			Offset(skip).
 			Order(clause.OrderByColumn{
-				Column: clause.Column{Name: pq.Sort},
-				Desc:   pq.SortBy != query.Asc,
+				Column: clause.Column{Name: sort},
+				Desc:   sortBy != "ASC",
 			}).Find(&ens).Error; err != nil {
 			return nil, count, errors.New(fmt.Sprintf("[%s]根据指定条件查询异常:%v", u.model.TableName(), err))
 		}

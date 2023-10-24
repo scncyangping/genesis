@@ -72,7 +72,7 @@ func (u *UserServiceImpl) Query(query *query.UserListQuery) (*vo.PageResult, err
 		})
 		vos = make([]vo.UserVO, 0)
 	)
-	if ens, count, err := u.repo.QueryByPage(qm, qb, true); err != nil {
+	if ens, count, err := u.repo.QueryByPage(qm, qb.Skip, qb.Limit, qb.Sort, qb.SortBy, true); err != nil {
 		return nil, err
 	} else {
 		if err := util.Copy(&vos, ens); err != nil {

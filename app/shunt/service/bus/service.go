@@ -18,12 +18,3 @@ type UserSrv interface {
 	DeleteById(string) error
 	DeleteByMap(map[string]any) error
 }
-
-type User2Srv interface {
-	Add2(*cmd.UserSaveCmd) (string, error)
-	Update(*cmd.UserUpdateCmd) error
-	Query(*query.UserListQuery) (*vo.PageResult, error)
-	GetById(string) (*vo.UserVO, error)
-	DeleteById(string) error
-	DeleteByMap(map[string]any) error
-}

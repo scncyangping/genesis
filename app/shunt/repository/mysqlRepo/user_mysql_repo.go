@@ -10,12 +10,12 @@ import (
 )
 
 type UserMysqlRepo struct {
-	*UniversalGormRepo[base.UserGorm]
+	*base.UniversalGormRepo[base.UserGorm]
 }
 
 // NewUserMysqlRepo
 // Need Wire
 func NewUserMysqlRepo(db *gorm.DB) *UserMysqlRepo {
 	return &UserMysqlRepo{
-		UniversalGormRepo: NewUniversalGormRepo(base.UserGorm{}, db)}
+		UniversalGormRepo: base.NewUniversalGormRepo(base.UserGorm{}, db)}
 }

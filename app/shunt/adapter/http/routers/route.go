@@ -17,6 +17,8 @@ func InitRoute(router *gin.Engine, handlers *Handlers) {
 	// 健康检查路由
 	health(router)
 	r := router.Group("/api/v1")
+	// 鉴权中间件
+	r.Use(middleware.TokenAuthMiddleware())
 	withInitUserRoute(r, handlers.AuthHandler)
 }
 
