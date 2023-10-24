@@ -7,23 +7,22 @@
 package cmd
 
 import (
-	"github.com/google/wire"
-	"genesis/pkg/core/shunt/adapter/http/handlers"
-	"genesis/pkg/core/shunt/adapter/http/server"
-	"genesis/pkg/core/shunt/application/service"
-	"genesis/pkg/core/shunt/repository"
+	"genesis/app/shunt/adapter/http/handlers/business"
+	"genesis/app/shunt/adapter/http/routers"
+	"genesis/app/shunt/repository/mysqlRepo"
+	"genesis/app/shunt/service/bus/impl"
+	"gorm.io/gorm"
 )
 
 // Injectors from wire.go:
 
-func NewHandler() *server.Handlers {
-	handler := handlers.NewHandler()
-	repositoryRepository := repository.NewRepository()
-	appSrvManager := service.NewAppSrvManager(repositoryRepository)
-	serverHandlers := server.NewHandlers(handler, appSrvManager)
-	return serverHandlers
+func NewHandler(db *gorm.DB) *routers.Handlers {
+	userMysqlRepo := mysqlRepo.NewUserMysqlRepo(db)
+	userServiceImpl := impl.NewUserServiceImpl(userMysqlRepo)
+	authHandler := business.NewAuthHandler(userServiceImpl)
+
+	handlers := &routers.Handlers{
+		AuthHandler: authHandler,
+	}
+	return handlers
 }
-
-// wire.go:
-
-var providerSet = wire.NewSet(repository.NewRepository, service.NewAppSrvManager, handlers.NewHandler, server.NewHandlers)

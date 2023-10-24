@@ -1,3 +1,7 @@
+// @Author: YangPing
+// @Create: 2023/10/23
+// @Description: redis 锁配置
+
 package redis
 
 import (

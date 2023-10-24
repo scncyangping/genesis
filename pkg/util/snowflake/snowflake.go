@@ -1,3 +1,7 @@
+// @Author: YangPing
+// @Create: 2023/10/23
+// @Description: 雪花算法
+
 package snowflake
 
 import (
@@ -31,7 +35,7 @@ func init() {
 	}
 }
 
-// Worker 定义一个woker工作节点所需要的基本参数
+// Worker 定义一个worker工作节点所需要的基本参数
 type Worker struct {
 	mu        sync.Mutex // 添加互斥锁 确保并发安全
 	timestamp int64      // 记录上一次生成id的时间戳
@@ -76,7 +80,7 @@ func (w *Worker) GetId() int64 {
 		// 下面这段代码看到很多前辈都写在if外面，无论节点上次生成id的时间戳与当前时间是否相同 都重新赋值  这样会增加一丢丢的额外开销 所以我这里是选择放在else里面
 		w.timestamp = now // 将机器上一次生成ID的时间更新为当前时间
 	}
-	ID := int64((now-epoch)<<timeShift | (w.workerId << workerShift) | (w.number))
+	ID := (now-epoch)<<timeShift | (w.workerId << workerShift) | (w.number)
 	return ID
 }
 

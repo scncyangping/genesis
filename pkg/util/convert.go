@@ -1,11 +1,18 @@
+// @Author: YangPing
+// @Create: 2023/10/23
+// @Description: 转换工具类
+
 package util
 
 import (
+	"reflect"
+	"strings"
+	"time"
+	"unicode"
+
 	"github.com/fatih/structs"
 	"github.com/jinzhu/copier"
 	"github.com/pkg/errors"
-	"reflect"
-	"time"
 )
 
 func Copy(target, source any) error {
@@ -45,7 +52,11 @@ func DeepCopyIgnoreEmpty(target, source any) error {
 	return copier.CopyWithOption(target, source, copier.Option{DeepCopy: true, IgnoreEmpty: true})
 }
 
-func StructToMap(s any) any {
+//func init() {
+//	structs.DefaultTagName = "json"
+//}
+
+func StructToMap(s any) map[string]any {
 	return structs.Map(s)
 }
 
@@ -103,4 +114,73 @@ func deepFields(baseType reflect.Type) []reflect.StructField {
 		}
 	}
 	return fields
+}
+
+// Camelize
+// name: convert string
+// big: whether the first letter is capitalized
+func Camelize(name string, big bool) string {
+	temp := strings.Split(name, "_")
+	var s string
+	for i, v := range temp {
+		vv := []rune(v)
+		if len(vv) > 0 {
+			if !(!big && i == 0) {
+				if vv[0] >= 'a' && vv[0] <= 'z' { //首字母大写
+					vv[0] -= 32
+				}
+			}
+			s += string(vv)
+		}
+	}
+	return s
+}
+
+func UnCamelize(name string) string {
+	buffer := strings.Builder{}
+
+	for i, r := range name {
+		if unicode.IsUpper(r) {
+			if i != 0 {
+				buffer.WriteRune('_')
+			}
+			buffer.WriteRune(unicode.ToLower(r))
+		} else {
+			buffer.WriteRune(r)
+		}
+	}
+	return buffer.String()
+}
+
+func ArrayInGroupsOf[T any](arr []T, num int) [][]T {
+	max := int(len(arr))
+	//判断数组大小是否小于等于指定分割大小的值，是则把原数组放入二维数组返回
+	if max <= num {
+		return [][]T{arr}
+	}
+	//获取应该数组分割为多少份
+	var quantity int
+	if max%num == 0 {
+		quantity = max / num
+	} else {
+		quantity = (max / num) + 1
+	}
+	//声明分割好的二维数组
+	var segments = make([][]T, 0)
+	//声明分割数组的截止下标
+	var start, end, i int
+	for i = 1; i <= quantity; i++ {
+		end = i * num
+		if i != quantity {
+			segments = append(segments, arr[start:end])
+		} else {
+			segments = append(segments, arr[start:])
+		}
+		start = i * num
+	}
+	return segments
+}
+
+func String(s string) *string {
+	return &s
 }

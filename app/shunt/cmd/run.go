@@ -1,13 +1,18 @@
+// @Author: YangPing
+// @Create: 2023/10/23
+// @Description: 初始化入口
+
 package cmd
 
 import (
-	"genesis/pkg/config/app/shunt"
-	"genesis/pkg/core/shunt/adapter/http/routers"
-	"genesis/pkg/core/shunt/adapter/http/server"
+	"genesis/app/shunt/adapter/http/routers"
+	"genesis/app/shunt/adapter/http/server"
+	"genesis/app/shunt/config"
 	"genesis/pkg/runtime/component"
 	"genesis/pkg/runtime/leader"
 	"genesis/pkg/types/constants"
 	"github.com/spf13/cobra"
+	"log/slog"
 	"os"
 	"time"
 )
@@ -18,33 +23,26 @@ func newRunCmd(opts constants.RunCmdOpts) *cobra.Command {
 	var mod string
 	cmd := &cobra.Command{
 		Use:   "run",
-		Short: "genesis Shunt Aggregate Url.",
-		Long:  `genesis Shunt Aggregate Url.`,
+		Short: "bastion Shunt Aggregate Url.",
+		Long:  `bastion Shunt Aggregate Url.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			log := shunt.Log()
-			runLog := log.Named("Run")
+			runLog := config.Rt().Logger().With("app", "shunt")
+			rt := component.NewManager(runLog.With("manager"), leader.NewNeverLeaderElector())
+			gracefulCtx, ctx := opts.SetupSignalHandler(runLog)
 
-			rt := component.NewManager(shunt.Log().Named("manager"), leader.NewNeverLeaderElector())
+			// step1. withGinServer
+			withGinServer(mod, runLog, rt)
 
-			gracefulCtx, ctx := opts.SetupSignalHandler(log)
-
-			// step1. add http server
-			httpServer := server.NewHttpGin(mod, shunt.ShuntConfig().Server, log)
-			routers.InitRoute(httpServer.Engine, NewHandler())
-
-			rt.Add(component.NewResilientComponent(log, httpServer))
-
+			// last. start
 			if err := rt.Start(gracefulCtx.Done()); err != nil {
-				runLog.Error(err, "problem running")
+				runLog.Error("problem running", "error", err)
 				return err
 			}
-
-			runLog.Infof("Stop signal received. Waiting %d seconds for components to stop gracefully...", gracefullyShutdownDuration)
 			select {
 			case <-ctx.Done():
 			case <-time.After(gracefullyShutdownDuration):
 			}
-			runLog.Info("Stopping universal service mesh manager")
+			runLog.Info("stopping service")
 			return nil
 		},
 	}
@@ -54,4 +52,15 @@ func newRunCmd(opts constants.RunCmdOpts) *cobra.Command {
 	cmd.PersistentFlags().StringVarP(&mod, "mod", "m", "debug", "run mod")
 
 	return cmd
+}
+
+func withGinServer(mod string, runLog *slog.Logger, rt component.Manager) {
+	// step1. add http server
+	ginC := server.NewGinConfig().
+		WithAddr(config.Rt().Config().GetAddr()).
+		WithPort(config.Rt().Config().GetPort())
+	httpServer := server.NewHttpGin(mod, ginC, runLog)
+
+	routers.InitRoute(httpServer.Engine, NewHandler(config.Rt().GormDB()))
+	rt.Add(component.NewResilientComponent(runLog, httpServer))
 }

@@ -1,7 +1,11 @@
+// @Author: YangPing
+// @Create: 2023/10/23
+// @Description: 组件基础接口
+
 package component
 
 import (
-	"go.uber.org/zap"
+	"log/slog"
 	"sync"
 )
 
@@ -27,7 +31,7 @@ type GracefulComponent interface {
 	WaitForDone()
 }
 
-// Component of Kuma, i.e. gRPC Server, HTTP server, reconciliation loop.
+// Component gRPC Server, HTTP server, reconciliation loop.
 var _ Component = ComponentFunc(nil)
 
 type ComponentFunc func(<-chan struct{}) error
@@ -65,7 +69,7 @@ type Manager interface {
 
 var _ Manager = &manager{}
 
-func NewManager(logger *zap.SugaredLogger, leaderElector LeaderElector) Manager {
+func NewManager(logger *slog.Logger, leaderElector LeaderElector) Manager {
 	return &manager{
 		log:           logger,
 		leaderElector: leaderElector,
@@ -73,7 +77,7 @@ func NewManager(logger *zap.SugaredLogger, leaderElector LeaderElector) Manager 
 }
 
 type manager struct {
-	log           *zap.SugaredLogger
+	log           *slog.Logger
 	components    []Component
 	leaderElector LeaderElector
 }

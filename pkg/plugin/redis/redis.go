@@ -1,39 +1,51 @@
+// @Author: YangPing
+// @Create: 2023/10/23
+// @Description: redis插件配置
+
 package redis
 
 import (
-	_redis "genesis/pkg/config/common/redis"
 	"github.com/go-redis/redis"
 	"github.com/pkg/errors"
+	"time"
 )
 
 var Client *RClient
 
+type Config interface {
+	PoolSize() int
+	Addr() []string
+	Pwd() string
+	DialTimeout() time.Duration
+	ReadTimeout() time.Duration
+	WriteTimeout() time.Duration
+}
 type RClient struct {
 	redis.Cmdable
 }
 
-func NewRedisConn(o *_redis.RedisConfig) (client *RClient, err error) {
+func NewRedisConn(o Config) (client *RClient, err error) {
 	var redisCli redis.Cmdable
-	if len(o.Addr) > 1 {
+	if len(o.Addr()) > 1 {
 		redisCli = redis.NewClusterClient(
 			&redis.ClusterOptions{
-				Addrs:        o.Addr,
-				PoolSize:     o.PoolSize,
-				DialTimeout:  o.DialTimeout,
-				ReadTimeout:  o.ReadTimeout,
-				WriteTimeout: o.WriteTimeout,
-				Password:     o.Pwd,
+				Addrs:        o.Addr(),
+				PoolSize:     o.PoolSize(),
+				DialTimeout:  o.DialTimeout(),
+				ReadTimeout:  o.ReadTimeout(),
+				WriteTimeout: o.WriteTimeout(),
+				Password:     o.Pwd(),
 			},
 		)
 	} else {
 		redisCli = redis.NewClient(
 			&redis.Options{
-				Addr:         o.Addr[0],
-				DialTimeout:  o.DialTimeout,
-				ReadTimeout:  o.ReadTimeout,
-				WriteTimeout: o.WriteTimeout,
-				Password:     o.Pwd,
-				PoolSize:     o.PoolSize,
+				Addr:         o.Addr()[0],
+				DialTimeout:  o.DialTimeout(),
+				ReadTimeout:  o.ReadTimeout(),
+				WriteTimeout: o.WriteTimeout(),
+				Password:     o.Pwd(),
+				PoolSize:     o.PoolSize(),
 				DB:           0,
 			},
 		)

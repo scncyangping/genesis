@@ -5,20 +5,15 @@
 package cmd
 
 import (
+	"genesis/app/shunt/api/http/routers"
 	"github.com/google/wire"
-	"genesis/pkg/core/shunt/adapter/http/handlers"
-	"genesis/pkg/core/shunt/adapter/http/server"
-	"genesis/pkg/core/shunt/application/service"
-	"genesis/pkg/core/shunt/repository"
+	"gorm.io/gorm"
 )
 
-var providerSet = wire.NewSet(
-	repository.NewRepository,
-	service.NewAppSrvManager,
-	handlers.NewHandler,
-	server.NewHandlers,
-)
-
-func NewHandler() *server.Handlers {
-	panic(wire.Build(providerSet))
+func NewHandler(db *gorm.DB) *routers.Handlers {
+	panic(wire.Build(
+		RepositorySlice,
+		wire.Struct(new(routers.Handlers), "*"),
+	))
+	return &routers.Handlers{}
 }

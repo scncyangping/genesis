@@ -1,3 +1,7 @@
+// @Author: YangPing
+// @Create: 2023/10/23
+// @Description: JWT配置
+
 package jwt
 
 import (
@@ -6,6 +10,7 @@ import (
 )
 
 type Info struct {
+	UserId   string `json:"userId"`
 	Username string `json:"username"`
 }
 
@@ -18,12 +23,15 @@ func (c Claims) Valid() error {
 	return c.Base.Valid()
 }
 
-func GenerateToken(name, issuer, secret string, et int) (string, error) {
+func GenerateToken(name, id, issuer, secret string, et int) (string, error) {
 	nowTime := time.Now()
 	expireTime := nowTime.Add(time.Duration(et) * time.Second)
 
 	claims := Claims{
-		Extra: Info{Username: name},
+		Extra: Info{
+			Username: name,
+			UserId:   id,
+		},
 		Base: jwt.StandardClaims{
 			ExpiresAt: expireTime.Unix(),
 			Issuer:    issuer,

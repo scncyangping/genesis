@@ -1,8 +1,12 @@
+// @Author: YangPing
+// @Create: 2023/10/23
+// @Description: 弹性组件配置
+
 package component
 
 import (
 	"fmt"
-	"go.uber.org/zap"
+	"log/slog"
 	"reflect"
 	"time"
 
@@ -14,12 +18,12 @@ const (
 )
 
 type resilientComponent struct {
-	log       *zap.SugaredLogger
+	log       *slog.Logger
 	component Component
 	cname     string
 }
 
-func NewResilientComponent(log *zap.SugaredLogger, component Component, name ...string) Component {
+func NewResilientComponent(log *slog.Logger, component Component, name ...string) Component {
 	c := &resilientComponent{
 		log:       log,
 		component: component,
@@ -33,7 +37,7 @@ func NewResilientComponent(log *zap.SugaredLogger, component Component, name ...
 }
 
 func (r *resilientComponent) Start(stop <-chan struct{}) error {
-	r.log.Infof("starting resilient component: %s", r.cname)
+	r.log.Info(fmt.Sprintf("starting resilient component: %s", r.cname))
 	for generationID := uint64(1); ; generationID++ {
 		errCh := make(chan error, 1)
 		go func(errCh chan<- error) {
@@ -53,11 +57,11 @@ func (r *resilientComponent) Start(stop <-chan struct{}) error {
 		}(errCh)
 		select {
 		case <-stop:
-			r.log.Infof("resilient done component: %s", r.cname)
+			r.log.Info(fmt.Sprintf("resilient done component: %s", r.cname))
 			return nil
 		case err := <-errCh:
 			if err != nil {
-				r.log.With("generationID", generationID).Error(err, fmt.Sprintf(" component: %s terminated with an error", r.cname))
+				r.log.With("generationID", generationID).Error(fmt.Sprintf(" component: %s terminated with an error: %v", r.cname, err))
 			}
 		}
 		<-time.After(backoffTime)

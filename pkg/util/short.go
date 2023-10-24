@@ -1,3 +1,7 @@
+// @Author: YangPing
+// @Create: 2023/10/23
+// @Description: 压缩工具类
+
 package util
 
 import (

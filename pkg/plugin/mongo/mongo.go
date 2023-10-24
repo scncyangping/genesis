@@ -1,8 +1,11 @@
+// @Author: YangPing
+// @Create: 2023/10/23
+// @Description: mongo插件配置
+
 package mongo
 
 import (
 	"context"
-	_mongo "genesis/pkg/config/common/mongo"
 	"genesis/pkg/types"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -10,25 +13,33 @@ import (
 	"time"
 )
 
-func NewMongoConn(cfg *_mongo.MongoConfig) (*mongo.Client, error) {
-	cs, err := cfg.ConnectionString()
+type Config interface {
+	GetUser() string
+	GetPassword() string
+	GetPoolSize() uint64
+	GetMaxConnIdleTime() uint64
+	GetConnectionString() (string, error)
+}
+
+func NewMongoConn(cfg Config) (*mongo.Client, error) {
+	cs, err := cfg.GetConnectionString()
 	if err != nil {
 		return nil, errors.Wrap(err, "get mongo connect url error")
 	}
 	opt := options.Client().ApplyURI(cs)
 
-	if len(cfg.User) != 0 {
+	if len(cfg.GetUser()) != 0 {
 		opt.Auth = &options.Credential{
-			Username: cfg.User,
-			Password: cfg.Password,
+			Username: cfg.GetUser(),
+			Password: cfg.GetPassword(),
 		}
 	}
 	//只使用与mongo操作耗时小于3秒的
 	opt.SetLocalThreshold(3 * time.Second)
 	//指定连接可以保持空闲的最大毫秒数
-	opt.SetMaxConnIdleTime(time.Duration(cfg.MaxConnIdleTime) * time.Second)
+	opt.SetMaxConnIdleTime(time.Duration(cfg.GetMaxConnIdleTime()) * time.Second)
 	//使用最大的连接数
-	opt.SetMaxPoolSize(cfg.PoolSize)
+	opt.SetMaxPoolSize(cfg.GetPoolSize())
 	opt.SetServerSelectionTimeout(1 * time.Second)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)

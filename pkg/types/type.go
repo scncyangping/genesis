@@ -1,6 +1,11 @@
+// @Author: YangPing
+// @Create: 2023/10/23
+// @Description: 全局类型、自定义类型配置
+
 package types
 
 import (
+	"gorm.io/gorm"
 	"path/filepath"
 )
 
@@ -39,3 +44,5 @@ const (
 	// ReleaseMode indicates sg mode is release.
 	ReleaseMode AppMod = "release"
 )
+
+var ErrRecordNotFound = gorm.ErrRecordNotFound
