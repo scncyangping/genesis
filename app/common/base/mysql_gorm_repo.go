@@ -32,7 +32,6 @@ type UniversalRepositoryI[T EnI] interface {
 	// UpdateByMap 根据主键ID批量更新
 	UpdateByMap(map[string]any, []string) (error, int64)
 	// DeleteById 根据主键删除数据
-	/**/
 	DeleteById(string) (error, bool)
 	// DeleteBy 根据条件删除数据
 	// bool: map中是否去除空元素
