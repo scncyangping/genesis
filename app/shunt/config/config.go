@@ -6,8 +6,10 @@ package config
 
 import (
 	"genesis/app/common/config"
+	"genesis/pkg/plugin/log"
 	"genesis/pkg/plugin/mysql"
 	"log/slog"
+	"os"
 )
 
 type ServerConfigI interface {
@@ -38,7 +40,7 @@ type BaseConfig struct {
 	Server *ServerConfig       `yaml:"server" json:"server"` // 服务配置
 	Mysql  *config.MysqlConfig `yaml:"mysql" json:"mysql"`   // mysql配置
 	Jwt    *JwtConfig          `yaml:"jwt" json:"jwt"`       // jwt配置
-	Es     *config.EsConfig    `yaml:"es" json:"es"`         // ES配置
+	Log    *config.LumberJack  `yaml:"log" json:"log"`       // 日志配置
 }
 
 func (c *BaseConfig) Sanitize() {
@@ -49,26 +51,43 @@ func (c *BaseConfig) Validate() error {
 	if err := c.Mysql.Validate(); err != nil {
 		return err
 	}
-	if err := c.Es.Validate(); err != nil {
-		return err
-	}
 	return nil
 }
 
 func (c *BaseConfig) Init() error {
-	runtime.buildLogger(slog.Default())
 	if db, err := mysql.NewMysqlConn(c.Mysql); err != nil {
 		return err
 	} else {
 		runtime.buildGormDb(db)
 	}
+	var (
+		logg = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	)
+	// 设置默认日志文件
+	if c.Log != nil && c.Log.FileName != "" {
+		var (
+			logger = log.NewLumberJack(c.Log)
+			level  slog.Level
+		)
+		if c.Log.Level == "DEBUG" {
+			level = slog.LevelDebug
+		} else {
+			level = slog.LevelInfo
+		}
+		logg = slog.New(slog.NewJSONHandler(logger, &slog.HandlerOptions{
+			AddSource:   false,
+			Level:       level,
+			ReplaceAttr: nil,
+		}))
+	}
+	slog.SetDefault(logg)
+	runtime.buildLogger(logg)
 	return nil
 }
 
 var DefaultBaseConfig = func() *BaseConfig {
 	return &BaseConfig{
 		Jwt:    &JwtConfig{},
-		Es:     &config.EsConfig{},
 		Server: &ServerConfig{},
 		Mysql:  &config.MysqlConfig{},
 	}

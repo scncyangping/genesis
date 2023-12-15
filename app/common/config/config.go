@@ -14,6 +14,57 @@ import (
 	"time"
 )
 
+type LumberJack struct {
+	FileName   string `yaml:"fileName"`   // 日志文件位置
+	MaxSize    int    `yaml:"maxSize"`    // 文件大小MB
+	MaxBackups int    `yaml:"maxBackups"` // 保留旧文件最大数量
+	MaxAge     int    `yaml:"maxAge"`     // 保留旧文件最大天数
+	Compress   bool   `yaml:"compress"`   // 是否压缩
+	// self
+	Level string `yaml:"level"` // debug/release
+}
+
+func (l *LumberJack) GetFileName() string {
+	return l.FileName
+}
+
+func (l *LumberJack) GetMaxSize() int {
+	return l.MaxSize
+}
+
+func (l *LumberJack) GetMaxBackups() int {
+	return l.MaxBackups
+}
+
+func (l *LumberJack) GetMaxAge() int {
+	return l.MaxAge
+}
+
+func (l *LumberJack) GetCompress() bool {
+	return l.Compress
+}
+
+func (l *LumberJack) Sanitize() {
+	if l.MaxSize == 0 {
+		l.MaxSize = 10
+	}
+	if l.MaxBackups == 0 {
+		l.MaxBackups = 10
+	}
+	if l.MaxAge == 0 {
+		l.MaxAge = 180
+	}
+}
+
+func (l *LumberJack) Validate() error {
+	if l.FileName == "" {
+		return errors.New("日志文件名不能为空")
+	}
+	return nil
+}
+
+var _ config.Config = (*LumberJack)(nil)
+
 type EsConfig struct {
 	Address  []string
 	UserName string
@@ -80,10 +131,10 @@ type ZapLogConfig struct {
 	MaxSize       int          `yaml:"maxSize"`    //日志文件小大（M）
 	MaxAge        int          `yaml:"maxAge"`     //保存的最大天数
 	MaxBackups    int          `yaml:"maxBackups"` // 最多存在多少个切片文件
-	Mod           types.AppMod `yaml:"Mod"`        //模式 1 正式 2 开发
+	Mod           types.AppMod `yaml:"mod"`        //模式 1 正式 2 开发
 	Level         string       `yaml:"level"`      //日志等级
 	NeedStdout    bool         `yaml:"needStdout"`
-	NeedFile      bool         `yaml:"NeedFile"`
+	NeedFile      bool         `yaml:"needFile"`
 }
 
 func (z *ZapLogConfig) Sanitize() {
@@ -204,7 +255,7 @@ type MysqlConfig struct {
 	// 用于设置闲置的连接数
 	MaxIdleConn int `yaml:"maxIdleConn"`
 	// 连接名称 用于多个连接时区分
-	ConnName string
+	ConnName string `yaml:"connName"`
 }
 
 func (p *MysqlConfig) GetMaxOpenConn() int {
@@ -281,6 +332,30 @@ type RedisConfig struct {
 	DialTimeout  time.Duration `yaml:"DialTimeout"`
 	ReadTimeout  time.Duration `yaml:"ReadTimeout"`
 	WriteTimeout time.Duration `yaml:"WriteTimeout"`
+}
+
+func (p *RedisConfig) GetPoolSize() int {
+	return p.PoolSize
+}
+
+func (p *RedisConfig) GetAddr() []string {
+	return p.Addr
+}
+
+func (p *RedisConfig) GetPwd() string {
+	return p.Pwd
+}
+
+func (p *RedisConfig) GetDialTimeout() time.Duration {
+	return p.DialTimeout
+}
+
+func (p *RedisConfig) GetReadTimeout() time.Duration {
+	return p.ReadTimeout
+}
+
+func (p *RedisConfig) GetWriteTimeout() time.Duration {
+	return p.WriteTimeout
 }
 
 var _ config.Config = (*RedisConfig)(nil)

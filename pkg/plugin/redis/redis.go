@@ -5,7 +5,8 @@
 package redis
 
 import (
-	"github.com/go-redis/redis"
+	"context"
+	"github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
 	"time"
 )
@@ -13,12 +14,12 @@ import (
 var Client *RClient
 
 type Config interface {
-	PoolSize() int
-	Addr() []string
-	Pwd() string
-	DialTimeout() time.Duration
-	ReadTimeout() time.Duration
-	WriteTimeout() time.Duration
+	GetPoolSize() int
+	GetAddr() []string
+	GetPwd() string
+	GetDialTimeout() time.Duration
+	GetReadTimeout() time.Duration
+	GetWriteTimeout() time.Duration
 }
 type RClient struct {
 	redis.Cmdable
@@ -26,33 +27,34 @@ type RClient struct {
 
 func NewRedisConn(o Config) (client *RClient, err error) {
 	var redisCli redis.Cmdable
-	if len(o.Addr()) > 1 {
+	if len(o.GetAddr()) > 1 {
 		redisCli = redis.NewClusterClient(
 			&redis.ClusterOptions{
-				Addrs:        o.Addr(),
-				PoolSize:     o.PoolSize(),
-				DialTimeout:  o.DialTimeout(),
-				ReadTimeout:  o.ReadTimeout(),
-				WriteTimeout: o.WriteTimeout(),
-				Password:     o.Pwd(),
+				Addrs:        o.GetAddr(),
+				PoolSize:     o.GetPoolSize(),
+				DialTimeout:  o.GetDialTimeout(),
+				ReadTimeout:  o.GetReadTimeout(),
+				WriteTimeout: o.GetWriteTimeout(),
+				Password:     o.GetPwd(),
 			},
 		)
 	} else {
 		redisCli = redis.NewClient(
 			&redis.Options{
-				Addr:         o.Addr()[0],
-				DialTimeout:  o.DialTimeout(),
-				ReadTimeout:  o.ReadTimeout(),
-				WriteTimeout: o.WriteTimeout(),
-				Password:     o.Pwd(),
-				PoolSize:     o.PoolSize(),
+				Addr:         o.GetAddr()[0],
+				DialTimeout:  o.GetDialTimeout(),
+				ReadTimeout:  o.GetReadTimeout(),
+				WriteTimeout: o.GetWriteTimeout(),
+				Password:     o.GetPwd(),
+				PoolSize:     o.GetPoolSize(),
 				DB:           0,
 			},
 		)
 	}
-	err = redisCli.Ping().Err()
+
+	err = redisCli.Ping(context.Background()).Err()
 	if nil != err {
-		return nil, errors.Wrapf(err, "Redis Init Error: Host: %v, Error:%v ", o.Addr, err)
+		return nil, errors.Wrapf(err, "Redis Init Error: Host: %v, Error:%v ", o.GetAddr, err)
 	}
 
 	client = new(RClient)
@@ -61,12 +63,12 @@ func NewRedisConn(o Config) (client *RClient, err error) {
 	return client, nil
 }
 
-func (c *RClient) Process(cmd redis.Cmder) error {
+func (c *RClient) Process(ctx context.Context, cmd redis.Cmder) error {
 	switch redisCli := c.Cmdable.(type) {
 	case *redis.ClusterClient:
-		return redisCli.Process(cmd)
+		return redisCli.Process(ctx, cmd)
 	case *redis.Client:
-		return redisCli.Process(cmd)
+		return redisCli.Process(ctx, cmd)
 	default:
 		return nil
 	}

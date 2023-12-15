@@ -14,9 +14,9 @@ import (
 )
 
 const (
-	AesIv     = "AesIv"
-	AesKey    = "AesKey"
-	DefaultIv = "DefaultIv"
+	AesIv     = "DEF_FAULT=CF(Aiv"
+	AesKey    = "DEF_FAULT=CF(Key"
+	DefaultIv = "REVGX0ZBVUxUPUNGKEFpdg==:"
 )
 
 func AESEncrypt(plaintext []byte) (string, error) {

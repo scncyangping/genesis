@@ -5,7 +5,8 @@
 package redis
 
 import (
-	"github.com/go-redis/redis"
+	"context"
+	"github.com/go-redis/redis/v8"
 	"time"
 )
 
@@ -20,14 +21,14 @@ func NewRedisLock(conn redis.Cmdable, key, val string, timeout time.Duration) *R
 	return &RLock{conn: conn, timeout: timeout, key: key, val: val}
 }
 
-func (lock *RLock) TryLock() (bool, error) {
-	return lock.conn.SetNX(lock.key, lock.val, lock.timeout).Result()
+func (lock *RLock) TryLock(ctx context.Context) (bool, error) {
+	return lock.conn.SetNX(ctx, lock.key, lock.val, lock.timeout).Result()
 }
 
-func (lock *RLock) UnLock() error {
+func (lock *RLock) UnLock(ctx context.Context) error {
 	luaDel := redis.NewScript("if redis.call('get',KEYS[1]) == ARGV[1] then " +
 		"return redis.call('del',KEYS[1]) else return 0 end")
-	return luaDel.Run(lock.conn, []string{lock.key}, lock.val).Err()
+	return luaDel.Run(ctx, lock.conn, []string{lock.key}, lock.val).Err()
 }
 
 func (lock *RLock) GetLockKey() string {
